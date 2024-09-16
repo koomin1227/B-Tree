@@ -29,6 +29,33 @@ public class BTree {
 		}
 	}
 
+	public BTreeNode search(int key) {
+		return search(root, key);
+	}
+
+	// 재귀적으로 검색하는 메서드
+	private BTreeNode search(BTreeNode node, int key) {
+		int i = 0;
+
+		// 현재 노드에서 키와 비교
+		while (i < node.keys.size() && key > node.keys.get(i)) {
+			i++;
+		}
+
+		// 키가 현재 노드에 있는 경우
+		if (i < node.keys.size() && key == node.keys.get(i)) {
+			return node;  // 키를 찾았으므로 해당 노드를 반환
+		}
+
+		// 리프 노드에 도달한 경우, 트리에 키가 없음
+		if (node.isLeaf()) {
+			return null;
+		}
+
+		// 자식 노드로 내려가서 계속 검색
+		return search(node.children.get(i), key);
+	}
+
 	public void insert(int key) {
 		insertIntoLeafNode(root, key);
 		if (root.isFull()) {
