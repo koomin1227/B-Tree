@@ -2,13 +2,12 @@ public class BTree {
 	private final int degree;
 	private BTreeNode root;
 
-
 	public BTree(int degree) {
 		this.degree = degree;
-		this.root = new BTreeNode(degree, null);;
+		this.root = new BTreeNode(degree);
 	}
 
-	void traverse() {
+	public void traverse() {
 		if (root != null) root.traverse();
 	}
 
@@ -22,7 +21,6 @@ public class BTree {
 
 	// 각 노드를 재귀적으로 출력하는 메서드
 	private void printNode(BTreeNode node, int level) {
-		// 현재 노드의 키들을 출력
 		System.out.println("  ".repeat(level) + "Keys: " + node.keys);
 
 		// 자식 노드가 있으면, 각 자식 노드에 대해 재귀 호출
@@ -32,87 +30,48 @@ public class BTree {
 	}
 
 	public void insert(int key) {
-		BTreeNode currentNode = root;
-		while (!currentNode.isLeaf()) {
-			int nextNodeLocation = -1;
-			for (int i = 0; i < currentNode.keys.size(); i++) {
-				if (currentNode.keys.get(i) > key) {
-					nextNodeLocation = i;
-					break;
-				}
-			}
-			if (nextNodeLocation == -1) {
-				nextNodeLocation = currentNode.keys.size();
-			}
-			currentNode = currentNode.children.get(nextNodeLocation);
-		}
-		currentNode.addKey(key);
-		if (currentNode.keys.size() > degree - 1) {
-			split(currentNode);
+		insertIntoLeafNode(root, key);
+		if (root.isFull()) {
+			BTreeNode newRoot = new BTreeNode(degree);
+			newRoot.children.add(root);
+			split(newRoot, 0);
+			root = newRoot;
 		}
 	}
 
-	private void split(BTreeNode currentNode) {
-		if (currentNode.parent == null) {
-			int mid = degree / 2;
-			BTreeNode leftNode = new BTreeNode(degree, currentNode);
-			BTreeNode rightNode = new BTreeNode(degree, currentNode);
-			for (int i = 0; i < mid; i++) {
-				leftNode.addKey(currentNode.keys.get(i));
-				if (!currentNode.isLeaf()) {
-					currentNode.children.get(i).parent = leftNode;
-					leftNode.children.add(i, currentNode.children.get(i));
-					currentNode.children.get(i + 1).parent = leftNode;
-					leftNode.children.add(i + 1, currentNode.children.get(i + 1));
-				}
-			}
-			for (int i = mid + 1; i < degree; i++) {
-				rightNode.addKey(currentNode.keys.get(i));
-				if (!currentNode.isLeaf()) {
-					currentNode.children.get(i).parent = rightNode;
-					rightNode.children.add(i - (mid + 1), currentNode.children.get(i));
-					currentNode.children.get(i + 1).parent = rightNode;
-					rightNode.children.add(i - (mid + 1) + 1, currentNode.children.get(i + 1));
-				}
-			}
-			int midKey = currentNode.keys.get(mid);
-			currentNode.keys.clear();
-			currentNode.keys.add(midKey);
-			if (!currentNode.isLeaf()) {
-				currentNode.children.clear();
-			}
-			currentNode.children.add(leftNode);
-			currentNode.children.add(rightNode);
+	// 가득 차지 않은 노드에 삽입하는 메서드
+	private void insertIntoLeafNode(BTreeNode node, int key) {
+		if (node.isLeaf()) {
+			node.addKey(key);
 		} else {
-			int mid = degree / 2;
-			currentNode.parent.addKey(currentNode.keys.get(mid));
-			currentNode.parent.children.remove(currentNode);
-			BTreeNode leftNode = new BTreeNode(degree, currentNode.parent);
-			BTreeNode rightNode = new BTreeNode(degree, currentNode.parent);
-			for (int i = 0; i < mid; i++) {
-				leftNode.addKey(currentNode.keys.get(i));
-				if (!currentNode.isLeaf()) {
-					currentNode.children.get(i).parent = leftNode;
-					leftNode.children.add(i, currentNode.children.get(i));
-					currentNode.children.get(i + 1).parent = leftNode;
-					leftNode.children.add(i + 1, currentNode.children.get(i + 1));
-				}
-			}
-			for (int i = mid + 1; i < degree; i++) {
-				rightNode.addKey(currentNode.keys.get(i));
-				if (!currentNode.isLeaf()) {
-					currentNode.children.get(i).parent = rightNode;
-					rightNode.children.add(i - (mid + 1), currentNode.children.get(i));
-					currentNode.children.get(i + 1).parent = rightNode;
-					rightNode.children.add(i - (mid + 1) + 1, currentNode.children.get(i + 1));
-				}
-			}
-			int index = currentNode.parent.keys.indexOf(currentNode.keys.get(mid));
-			currentNode.parent.children.add(index, leftNode);
-			currentNode.parent.children.add(index + 1, rightNode);
-			if (currentNode.parent.keys.size() > degree - 1) {
-				split(currentNode.parent);
+			// 자식 노드로 내려가며 삽입
+			int nextNodeIndex = node.getNextNodeIndex(key);
+			BTreeNode nextNode = node.children.get(nextNodeIndex);
+			insertIntoLeafNode(nextNode, key);
+			if (nextNode.isFull()) {
+				split(node, nextNodeIndex);
 			}
 		}
+	}
+
+	// 노드를 분할하는 메서드
+	private void split(BTreeNode parentNode, int fullNodeIndex) {
+		BTreeNode fullNode = parentNode.children.get(fullNodeIndex);
+		BTreeNode newNode = new BTreeNode(degree);
+		int mid = degree / 2;
+
+		// 새로운 노드에 중간 값 이후의 키와 자식들을 이동
+		for (int j = mid + 1; j < degree; j++) {
+			newNode.keys.add(fullNode.keys.remove(mid + 1));
+		}
+		if (!fullNode.isLeaf()) {
+			for (int j = mid + 1; j <= degree; j++) {
+				newNode.children.add(fullNode.children.remove(mid + 1));
+			}
+		}
+
+		// 부모 노드에 중간 키 추가
+		parentNode.keys.add(fullNodeIndex, fullNode.keys.remove(mid));
+		parentNode.children.add(fullNodeIndex + 1, newNode);
 	}
 }
