@@ -8,7 +8,9 @@ import BTree.BTree;
 public class Main {
 	public static void main(String[] args) {
 		bTreeTest();
+		bTreeVisitedNodeTest();
 		bstTest();
+		bstVisitedNodeTest();
 		BTreeVsBSTSequential();
 		BTreeVsBSTRandom();
 		BTreeVsArrayListSequential();
@@ -17,8 +19,8 @@ public class Main {
 	}
 
 	public static void bTreeTest() {
-		BTree bTree = new BTree(3);
-		for(int i = 1; i <= 11; i++) {
+		BTree bTree = new BTree(4);
+		for(int i = 1; i <= 15; i++) {
 			bTree.insert(i);
 			bTree.printTree();
 		}
@@ -85,6 +87,22 @@ public class Main {
 				bst.search(i);
 			}
 		}, "[Binary Search Tree] Search time:");
+
+		int bTreeCount = 0;
+		for (int i = 0; i < numElements; i++) {
+			bTreeCount += bTree.countNodesVisited(i);
+		}
+		int averageBTreeCount = bTreeCount / numElements;
+
+		int bstCount = 0;
+		for (int i = 0; i < numElements; i++) {
+			bstCount += bst.countNodesVisited(i);
+		}
+		int averageBstCount = bstCount / numElements;
+
+		System.out.println("[B Tree] average visited count:" + averageBTreeCount);
+		System.out.println("[Binary Search Tree] average visited count:" + averageBstCount);
+
 	}
 
 	public static void BTreeVsBSTRandom() {
@@ -117,6 +135,21 @@ public class Main {
 				bst.search(random.nextInt(numElements));
 			}
 		}, "[Binary Search Tree] Search time:");
+
+		int bTreeCount = 0;
+		for (int i = 0; i < numElements; i++) {
+			bTreeCount += bTree.countNodesVisited(i);
+		}
+		int averageBTreeCount = bTreeCount / numElements;
+
+		int bstCount = 0;
+		for (int i = 0; i < numElements; i++) {
+			bstCount += bst.countNodesVisited(i);
+		}
+		int averageBstCount = bstCount / numElements;
+
+		System.out.println("[B Tree] average visited count:" + averageBTreeCount);
+		System.out.println("[Binary Search Tree] average visited count:" + averageBstCount);
 	}
 
 	public static void BTreeVsArrayListSequential() {
@@ -187,46 +220,74 @@ public class Main {
 	}
 
 	public static void BTreeVsBTreeDegree() {
-		Random random = new Random();
-		int degree1 = 3;
-		BTree bTree1 = new BTree(degree1);
-		int degree2 = 7;
-		BTree bTree2 = new BTree(degree2);
+		for (int i = 3; i < 400; i = i + 10) {
+			BTree bTree1 = new BTree(i);
 
+			String taskName = "[B Tree " + i +"] Insert time:";
+			String taskName2 = "[B Tree " + i +"] Search time:";
+			String taskName3 = "[B Tree " + i +"] Average Visited Count:";
 
-		// 성능을 측정할 데이터 크기
-		int numElements = 1000000;
-		System.out.println("\n<B-Tree Vs B-Tree Degree>");
-		measureExecutionTime(() -> {
-			for (int i = 0; i < numElements; i++) {
-				bTree1.insert(i);
+			int numElements = 1000000;
+
+			measureExecutionTime(() -> {
+				for (int j = 0; j < numElements; j++) {
+					bTree1.insert(j);
+				}
+			}, taskName);
+
+			measureExecutionTime(() -> {
+				for (int j = 0; j < numElements; j++) {
+					bTree1.search(j);
+				}
+			}, taskName2);
+
+			int bTreeCount = 0;
+			for (int j = 0; j < numElements; j++) {
+				bTreeCount += bTree1.countNodesVisited(j);
 			}
-		}, "[B Tree 3] Insert time:");
+			int averageBTreeCount = bTreeCount / numElements;
+			System.out.println(taskName3 + averageBTreeCount + "\n");
+		}
+	}
 
-		measureExecutionTime(() -> {
-			for (int i = 0; i < numElements; i++) {
-				bTree2.insert(i);
-			}
-		}, "[B Tree 7] Insert time:");
+	public static void bTreeVisitedNodeTest() {
+		BTree bTree = new BTree(4);
+		for(int i = 1; i <= 15; i++) {
+			bTree.insert(i);
+			bTree.printTree();
+		}
+		int count = bTree.countNodesVisited(12);
+		System.out.println(count);
+	}
 
-		measureExecutionTime(() -> {
-			for (int i = 0; i < numElements; i++) {
-				bTree1.search(i);
-			}
-		}, "[B Tree 3] Search time:");
-
-		measureExecutionTime(() -> {
-			for (int i = 0; i < numElements; i++) {
-				bTree2.search(i);
-			}
-		}, "[B Tree 7] Search time:");
+	public static void bstVisitedNodeTest() {
+		BinarySearchTree bst = new BinarySearchTree();
+		// for(int i = 1; i <= 15; i++) {
+		// 	bst.insert(i);
+		// 	bst.printTree();
+		// }
+		bst.insert(5);
+		bst.printTree();
+		bst.insert(7);
+		bst.printTree();
+		bst.insert(9);
+		bst.printTree();
+		bst.insert(3);
+		bst.printTree();
+		bst.insert(1);
+		bst.printTree();
+		int count = bst.countNodesVisited(1);
+		System.out.println(count);
 	}
 
 
 
 	// 시간을 측정하고 해당 코드의 실행 시간을 반환하는 함수
 	public static void measureExecutionTime(Runnable task, String taskName) {
-
+		int degree = 3;
+		BTree bTree = new BTree(degree);
+		BinarySearchTree bst = new BinarySearchTree();
+		int numElements = 10000;
 
 		// 시작 시간
 		long startTime = System.nanoTime();
