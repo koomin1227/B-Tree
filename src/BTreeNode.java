@@ -40,6 +40,10 @@ public class BTreeNode {
 		return nextNodeLocation;
 	}
 
+	public int findKey(int key) {
+		return keys.indexOf(key);
+	}
+
 	void traverse() {
 		int i;
 		for (i = 0; i < keys.size(); i++) {
