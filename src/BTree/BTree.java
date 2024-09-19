@@ -62,7 +62,7 @@ public class BTree {
 	}
 
 	public void insert(int key) {
-		insertIntoLeafNode(root, key);
+		insert(root, key);
 		if (root.isFull()) {
 			BTreeNode newRoot = new BTreeNode(degree);
 			newRoot.children.add(root);
@@ -72,14 +72,14 @@ public class BTree {
 	}
 
 	// 가득 차지 않은 노드에 삽입하는 메서드
-	private void insertIntoLeafNode(BTreeNode node, int key) {
+	private void insert(BTreeNode node, int key) {
 		if (node.isLeaf()) {
 			node.addKey(key);
 		} else {
 			// 자식 노드로 내려가며 삽입
 			int nextNodeIndex = node.getNextNodeIndex(key);
 			BTreeNode nextNode = node.children.get(nextNodeIndex);
-			insertIntoLeafNode(nextNode, key);
+			insert(nextNode, key);
 			if (nextNode.isFull()) {
 				split(node, nextNodeIndex);
 			}
@@ -154,21 +154,21 @@ public class BTree {
 		}
 	}
 
-	private void deleteInternalNode(BTreeNode node, int idx) {
+	private void deleteInternalNode(BTreeNode node, int deletedKeyIndex) {
 		BTreeNode nextChild;
-		if (node.children.get(idx).keys.size() >= minimumKeyCount) {
-			int pred = getPredecessor(node, idx);
-			node.keys.set(idx, pred);
-			nextChild = node.children.get(idx);
+		if (node.children.get(deletedKeyIndex).keys.size() >= minimumKeyCount) {
+			int pred = getPredecessor(node, deletedKeyIndex);
+			node.keys.set(deletedKeyIndex, pred);
+			nextChild = node.children.get(deletedKeyIndex);
 			delete(nextChild, pred);
 		} else {
-			int succ = getSuccessor(node, idx);
-			node.keys.set(idx, succ);
-			nextChild = node.children.get(idx + 1);
+			int succ = getSuccessor(node, deletedKeyIndex);
+			node.keys.set(deletedKeyIndex, succ);
+			nextChild = node.children.get(deletedKeyIndex + 1);
 			delete(nextChild, succ);
 		}
 		if (nextChild.keys.size() < minimumKeyCount) {
-			fill(node, idx);
+			fill(node, deletedKeyIndex);
 		}
 	}
 
@@ -188,70 +188,97 @@ public class BTree {
 		return current.keys.get(0);
 	}
 
-	private void fill(BTreeNode node, int idx) {
-		// 형제 한테 빌리기
-		if (idx != 0 && node.children.get(idx - 1).keys.size() > minimumKeyCount) {
-			borrowFromPrev(node, idx);
-		} else if (idx != node.children.size() - 1 && node.children.get(idx + 1).keys.size() > minimumKeyCount) {
-			borrowFromNext(node, idx);
-		} else {
-			if (idx != 0) {
-				leftMerge(node, idx);
-			} else {
-				rightMerge(node, idx);
+	private void fill(BTreeNode node, int deletedNodeIndex) {
+		// 왼쪽 형제에게 빌리는 경우 2-1
+		if (deletedNodeIndex != 0 && node.children.get(deletedNodeIndex - 1).keys.size() > minimumKeyCount) {
+			borrowFromPrev(node, deletedNodeIndex);
+		}
+		// 오른쪽 형제에게 빌리는 경우 2-1
+		else if (deletedNodeIndex != node.children.size() - 1 && node.children.get(deletedNodeIndex + 1).keys.size() > minimumKeyCount) {
+			borrowFromNext(node, deletedNodeIndex);
+		}
+		else {
+			// 왼쪽 형제와 부모노드를 합치는 경우 2-2
+			if (deletedNodeIndex != 0) {
+				leftMerge(node, deletedNodeIndex);
+			}
+			// 오른쪽 형제와 부모노드를 합치는 경우 2-2
+			else {
+				rightMerge(node, deletedNodeIndex);
 			}
 		}
 	}
 
-	private void borrowFromPrev(BTreeNode node, int idx) {
-		BTreeNode child = node.children.get(idx);
-		BTreeNode sibling = node.children.get(idx - 1);
+	private void borrowFromPrev(BTreeNode node, int deletedNodeIndex) {
+		BTreeNode deletedChild = node.children.get(deletedNodeIndex);
+		BTreeNode sibling = node.children.get(deletedNodeIndex - 1);
 
-		child.addKey(node.keys.get(idx - 1));
-		if (!child.isLeaf()) {
-			child.children.add(0, sibling.children.remove(sibling.children.size() - 1));
+		deletedChild.addKey(node.keys.get(deletedNodeIndex - 1));
+		if (!deletedChild.isLeaf()) {
+			deletedChild.children.add(0, sibling.children.remove(sibling.children.size() - 1));
 		}
-		node.keys.set(idx - 1, sibling.keys.remove(sibling.keys.size() - 1));
+		node.keys.set(deletedNodeIndex - 1, sibling.keys.remove(sibling.keys.size() - 1));
 	}
 
-	private void borrowFromNext(BTreeNode node, int idx) {
-		BTreeNode child = node.children.get(idx);
-		BTreeNode sibling = node.children.get(idx + 1);
+	private void borrowFromNext(BTreeNode node, int deletedNodeIndex) {
+		BTreeNode deletedChild = node.children.get(deletedNodeIndex);
+		BTreeNode sibling = node.children.get(deletedNodeIndex + 1);
 
-		child.keys.add(node.keys.get(idx));
-		if (!child.isLeaf()) {
-			child.children.add(sibling.children.remove(0));
+		deletedChild.keys.add(node.keys.get(deletedNodeIndex));
+		if (!deletedChild.isLeaf()) {
+			deletedChild.children.add(sibling.children.remove(0));
 		}
-		node.keys.set(idx, sibling.keys.remove(0));
+		node.keys.set(deletedNodeIndex, sibling.keys.remove(0));
 	}
 
-	private void leftMerge(BTreeNode node, int idx) {
-		BTreeNode child = node.children.get(idx);
-		BTreeNode sibling = node.children.get(idx - 1);
+	private void leftMerge(BTreeNode node, int deletedNodeIndex) {
+		BTreeNode deletedChild = node.children.get(deletedNodeIndex);
+		BTreeNode sibling = node.children.get(deletedNodeIndex - 1);
 
 		for (int i = 0; i < sibling.keys.size(); i++) {
-			child.keys.add(i, sibling.keys.get(i));
+			deletedChild.keys.add(i, sibling.keys.get(i));
 		}
-		if (!child.isLeaf()) {
+		if (!deletedChild.isLeaf()) {
 			for (int i = 0; i < sibling.children.size(); i++) {
-				child.children.add(i, sibling.children.get(i));
+				deletedChild.children.add(i, sibling.children.get(i));
 			}
 		}
-		child.addKey(node.keys.remove(idx - 1));
+		deletedChild.addKey(node.keys.remove(deletedNodeIndex - 1));
 
 		node.children.remove(sibling);
 	}
 
-	private void rightMerge(BTreeNode node, int idx) {
-		BTreeNode child = node.children.get(idx);
-		BTreeNode sibling = node.children.get(idx + 1);
+	private void rightMerge(BTreeNode node, int deletedNodeIndex) {
+		BTreeNode deletedChild = node.children.get(deletedNodeIndex);
+		BTreeNode sibling = node.children.get(deletedNodeIndex + 1);
 
-		child.addKey(node.keys.remove(idx));
-		child.keys.addAll(sibling.keys);
-		if (!child.isLeaf()) {
-			child.children.addAll(sibling.children);
+		deletedChild.addKey(node.keys.remove(deletedNodeIndex));
+		deletedChild.keys.addAll(sibling.keys);
+		if (!deletedChild.isLeaf()) {
+			deletedChild.children.addAll(sibling.children);
 		}
 
 		node.children.remove(sibling);
+	}
+
+	public int countNodesVisited(int key) {
+		return countNodesVisited(root, key, 0);
+	}
+
+	// 재귀적으로 방문한 노드를 세는 메서드
+	private int countNodesVisited(BTreeNode node, int key, int nodesVisited) {
+		int i = 0;
+		nodesVisited++; // 현재 노드를 방문했으므로 방문 노드 수 증가
+
+		while (i < node.keys.size() && key > node.keys.get(i)) {
+			i++;
+		}
+		if (i < node.keys.size() && key == node.keys.get(i)) {
+			return nodesVisited; // 키를 찾았으므로 현재까지의 방문 노드 수 반환
+		}
+		if (node.isLeaf()) {
+			return nodesVisited; // 리프 노드에 도달, 트리에 키가 없음
+		}
+		return countNodesVisited(node.children.get(i), key, nodesVisited);
 	}
 }

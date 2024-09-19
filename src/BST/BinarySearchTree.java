@@ -101,4 +101,25 @@ public class BinarySearchTree {
 			printNode(node.right, level + 2);
 		}
 	}
+
+	public int countNodesVisited(int key) {
+		return countNodesVisitedRec(root, key, 0);
+	}
+
+	// 재귀적으로 방문한 노드를 세는 메서드
+	private int countNodesVisitedRec(BSTNode node, int key, int nodesVisited) {
+		if (node == null) {
+			return nodesVisited; // 트리에 키가 없을 경우, 방문한 노드 수 반환
+		}
+
+		nodesVisited++; // 현재 노드를 방문했으므로 방문 노드 수 증가
+
+		if (node.key == key) {
+			return nodesVisited; // 키를 찾았으므로 현재까지의 방문 노드 수 반환
+		} else if (key < node.key) {
+			return countNodesVisitedRec(node.left, key, nodesVisited); // 왼쪽 자식으로 이동
+		} else {
+			return countNodesVisitedRec(node.right, key, nodesVisited); // 오른쪽 자식으로 이동
+		}
+	}
 }
