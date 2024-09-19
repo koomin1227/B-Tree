@@ -1,3 +1,5 @@
+package BTree;
+
 public class BTree {
 	private final int degree;
 	private BTreeNode root;
@@ -12,10 +14,6 @@ public class BTree {
 		} else {
 			this.minimumKeyCount = degree / 2;
 		}
-	}
-
-	public void traverse() {
-		if (root != null) root.traverse();
 	}
 
 	// 트리 형식으로 키 값을 출력하는 메서드

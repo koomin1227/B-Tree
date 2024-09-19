@@ -1,3 +1,5 @@
+package BTree;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +28,10 @@ public class BTreeNode {
 		}
 	}
 
+	public int findKey(int key) {
+		return keys.indexOf(key);
+	}
+
 	public int getNextNodeIndex(int key) {
 		int nextNodeLocation = -1;
 		for (int i = 0; i < keys.size(); i++) {
@@ -38,21 +44,6 @@ public class BTreeNode {
 			nextNodeLocation = keys.size();
 		}
 		return nextNodeLocation;
-	}
-
-	public int findKey(int key) {
-		return keys.indexOf(key);
-	}
-
-	void traverse() {
-		int i;
-		for (i = 0; i < keys.size(); i++) {
-			if (!isLeaf())
-				children.get(i).traverse();
-			System.out.print(" " + keys.get(i));
-		}
-		if (!isLeaf())
-			children.get(i).traverse();
 	}
 
 	public boolean isLeaf() {
